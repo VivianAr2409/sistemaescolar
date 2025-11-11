@@ -1,0 +1,181 @@
+{% extends 'page/base.html' %}
+{% block content %}
+
+<div class="dashboard-header">
+  <h1>Diagrama de Pareto por Carrera</h1>
+  <p>Factores que más afectan a los alumnos (columnas de riesgo en el CSV).</p>
+</div>
+
+<!-- Carga CSV centrada -->
+<form method="post" enctype="multipart/form-data"
+      class="pareto-controls"
+      style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:1rem;">
+  {% csrf_token %}
+  <div class="form-group" style="max-width:520px; width:100%;">
+    <label style="font-weight:700;">Archivo CSV</label>
+    <input type="file" name="csv_file" accept=".csv" required style="display:block; margin:0 auto;">
+    <small class="text-secondary">
+      Requiere columna de <strong>carrera</strong> y columnas de riesgo:
+      <em>riesgo_academico, riesgo_economico, riesgo_psicosocial, riesgo_institucional, riesgo_tecnologico, riesgo_contextual</em>
+      (se aceptan variantes con acentos/espacios/guiones).
+    </small>
+  </div>
+  <div class="form-actions" style="margin-top:0.25rem;">
+    <button type="submit" class="btn-primary">Cargar datos</button>
+  </div>
+</form>
+
+{% if message %}
+  <p class="mt-2" style="color:#2563eb;"><em>{{ message }}</em></p>
+{% endif %}
+
+<!-- Controles -->
+<div id="controls" class="pareto-controls" style="display:none; gap:1rem; align-items:flex-end;">
+  <div class="form-group" style="min-width:260px;">
+    <label><strong>Carrera</strong></label>
+    <select id="selCarrera" class="form-select"></select>
+    <small class="text-secondary">Elige la carrera a analizar.</small>
+  </div>
+
+  <div class="form-group" style="min-width:140px;">
+    <label><strong>Top N</strong></label>
+    <select id="selTop" class="form-select">
+      <option>3</option>
+      <option selected>6</option>
+      <option>10</option>
+    </select>
+    <small class="text-secondary">Número de factores visibles (máx. 6).</small>
+  </div>
+
+  <div class="form-actions">
+    <button id="btnAplicar" class="btn-primary" type="button">Aplicar</button>
+    <button id="btnReset" class="btn-secondary" type="button">Restablecer</button>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div id="kpis" class="stats-grid" style="display:none;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);">
+      <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-bar-chart" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8"/><rect x="12" y="6" width="3" height="12"/><rect x="17" y="13" width="3" height="5"/></svg>
+    </div>
+    <div class="stat-info">
+      <h3>Incidencias Totales</h3>
+      <div class="stat-value" id="kpiTotal">0</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);">
+      <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-percent" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+    </div>
+    <div class="stat-info">
+      <h3>Regla 80/20</h3>
+      <div class="stat-value" id="kpi8020">0%</div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráfico -->
+<div class="chart-card" id="chartCard" style="display:none;">
+  <div class="chart-header">
+    <h3 id="chartTitle">Pareto</h3>
+  </div>
+  <div id="paretoPlot" style="height:480px;"></div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+(function() {
+  const agg = {{ agg_json|safe }};      // [{ carrera, riesgos: { "Académico": n, ... } }]
+  const carreras = {{ carreras|safe }};
+
+  if (!Array.isArray(agg) || agg.length === 0) return;
+
+  // Mostrar UI
+  document.getElementById('controls').style.display = 'flex';
+  document.getElementById('chartCard').style.display = 'block';
+  document.getElementById('kpis').style.display = 'grid';
+
+  // Poblar carreras
+  const selCarr = document.getElementById('selCarrera');
+  selCarr.innerHTML = carreras.map(c => `<option value="${c}">${c}</option>`).join('');
+  const selTop = document.getElementById('selTop');
+
+  function getAggForCareer(carrera) {
+    return agg.find(a => String(a.carrera) === String(carrera)) || null;
+  }
+
+  function toSortedArrays(obj, topN) {
+    // obj = {"Académico": 10, "Económico": 5, ...}
+    const arr = Object.entries(obj || {}).sort((a,b) => b[1] - a[1]);
+    const top = arr.slice(0, topN);
+    const labels = top.map(d => d[0]);
+    const values = top.map(d => +d[1]);
+    const total = arr.reduce((s,d)=>s + (+d[1]), 0) || 1;
+    let cum = 0;
+    const cumulative = values.map(v => (cum += v, (cum/total)*100));
+    const idx80 = cumulative.findIndex(v => v >= 80);
+    const pctFactors = (idx80 === -1 ? values.length : (idx80+1)) / Math.max(values.length,1) * 100;
+    return { labels, values, cumulative, total, pctFactors };
+  }
+
+  function render(carrera, topN) {
+    const A = getAggForCareer(carrera);
+    if (!A) return;
+
+    const { labels, values, cumulative, total, pctFactors } = toSortedArrays(A.riesgos, topN);
+
+    // KPIs
+    document.getElementById('kpiTotal').textContent = total.toFixed(0);
+    document.getElementById('kpi8020').textContent = `${pctFactors.toFixed(0)}%`;
+
+    const bars = {
+      x: labels,
+      y: values,
+      type: 'bar',
+      name: 'Frecuencia',
+      marker: { opacity: 0.9 },
+      hovertemplate: '%{x}<br>Frecuencia: %{y:.0f}<extra></extra>',
+      yaxis: 'y1'
+    };
+    const line = {
+      x: labels,
+      y: cumulative,
+      type: 'scatter',
+      mode: 'lines+markers',
+      name: 'Acumulado %',
+      yaxis: 'y2',
+      hovertemplate: '%{x}<br>Acumulado: %{y:.1f}%<extra></extra>'
+    };
+    const layout = {
+      margin: { t: 10, r: 40, b: 80, l: 56 },
+      xaxis: { tickangle: -15, gridcolor: 'rgba(0,0,0,0.05)' },
+      yaxis: { title: 'Frecuencia', gridcolor: 'rgba(0,0,0,0.05)', domain: [0, 0.8], anchor: 'x', side: 'left' },
+      yaxis2:{ title: 'Acumulado %', overlaying: 'y', side: 'right', range: [0,100] },
+      legend: { orientation: 'h', y: -0.25 },
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)'
+    };
+
+    document.getElementById('chartTitle').textContent = `Pareto — ${carrera}`;
+    Plotly.newPlot('paretoPlot', [bars, line], layout, { displayModeBar: true, responsive: true });
+  }
+
+  // Eventos
+  document.getElementById('btnAplicar').addEventListener('click', function(){
+    render(selCarr.value, parseInt(selTop.value, 10));
+  });
+
+  document.getElementById('btnReset').addEventListener('click', function(){
+    selCarr.selectedIndex = 0;
+    selTop.value = '6';
+    render(selCarr.value, 6);
+  });
+
+  // Render inicial
+  render(selCarr.value, parseInt(selTop.value, 10));
+})();
+</script>
+
+{% endblock %}

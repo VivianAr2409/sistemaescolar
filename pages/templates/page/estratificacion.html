@@ -1,0 +1,217 @@
+{% extends 'page/base.html' %}
+{% block content %}
+
+<div class="dashboard-header">
+  <h1>Estratificación (Carrera × Semestre)</h1>
+  <p>Promedio de calificaciones por semestre y carrera (0–10).</p>
+</div>
+
+<!-- Carga CSV (centrado sin tocar CSS) -->
+<form method="post" enctype="multipart/form-data"
+      class="pareto-controls"
+      style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:1rem;">
+  {% csrf_token %}
+  <div class="form-group" style="max-width:520px; width:100%;">
+    <label style="font-weight:700;">Archivo CSV</label>
+    <input type="file" name="csv_file" accept=".csv" required style="display:block; margin:0 auto;">
+    <small class="text-secondary">
+      Debe contener: <strong>carrera</strong>, <strong>semestre</strong> y <strong>calificación</strong> (0–10).
+    </small>
+  </div>
+  <div class="form-actions" style="margin-top:0.25rem;">
+    <button type="submit" class="btn-primary">Cargar datos</button>
+  </div>
+</form>
+
+{% if message %}
+  <p class="mt-2" style="color:#2563eb;"><em>{{ message }}</em></p>
+{% endif %}
+
+<!-- Controles de filtrado (solo si hay datos cargados) -->
+<div id="filters" class="pareto-controls" style="display:none; gap:1rem; align-items:flex-end;">
+  <div class="form-group" style="min-width:260px;">
+    <label><strong>Carrera</strong></label>
+    <select id="selCarrera" multiple class="form-select" size="6"></select>
+    <small class="text-secondary">Selecciona una o varias (Ctrl/Cmd + clic). Por defecto: todas.</small>
+  </div>
+  <div class="form-group" style="min-width:180px;">
+    <label><strong>Semestre</strong></label>
+    <select id="selSemestre" multiple class="form-select" size="6"></select>
+    <small class="text-secondary">Selecciona uno o varios. Por defecto: todos.</small>
+  </div>
+  <div class="form-actions">
+    <button id="btnAplicar" class="btn-primary">Aplicar filtros</button>
+    <button id="btnReset" class="btn-secondary" type="button">Restablecer</button>
+  </div>
+</div>
+
+<!-- Card de gráfica -->
+<div class="chart-card" id="chartCard" style="display:none;">
+  <div class="chart-header">
+    <h3>Promedio de calificaciones por semestre y carrera</h3>
+  </div>
+  <div id="bar" style="height:460px;"></div>
+</div>
+
+<!-- Card de tabla -->
+<div class="chart-card" id="tableCard" style="display:none; margin-top:1rem;">
+  <div class="chart-header">
+    <h3>Tabla de promedios (semestre × carrera)</h3>
+  </div>
+  <div class="table-container">
+    <table id="pivotTable">
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+(function() {
+  const data = {{ data_json|safe }};      // [{ carrera, semestre, calificacion }]
+  const carrerasCtx = {{ carreras|safe }}; // lista para selects (servidor)
+  const semestresCtx = {{ semestres|safe }};
+
+  if (!Array.isArray(data) || data.length === 0) {
+    // No hay datos cargados aún
+    return;
+  }
+
+  // Mostrar controles y tarjetas
+  document.getElementById('filters').style.display = 'flex';
+  document.getElementById('chartCard').style.display = 'block';
+  document.getElementById('tableCard').style.display = 'block';
+
+  // Poblar selects con valores del servidor
+  const selCarrera = document.getElementById('selCarrera');
+  const selSem = document.getElementById('selSemestre');
+
+  function fillSelect(select, values) {
+    select.innerHTML = values.map(v => `<option value="${String(v)}">${String(v)}</option>`).join('');
+    // seleccionar todo por defecto
+    for (let i = 0; i < select.options.length; i++) {
+      select.options[i].selected = true;
+    }
+  }
+  fillSelect(selCarrera, carrerasCtx);
+  fillSelect(selSem, semestresCtx);
+
+  function getSelectedValues(select) {
+    return Array.from(select.selectedOptions).map(o => o.value);
+  }
+
+  // Cálculo de promedios por (carrera, semestre)
+  function computeGrouped(selectedCarreras, selectedSemestres) {
+    // Filtrar
+    const filtered = data.filter(d =>
+      (selectedCarreras.length === 0 || selectedCarreras.includes(String(d.carrera))) &&
+      (selectedSemestres.length === 0 || selectedSemestres.includes(String(d.semestre)))
+    );
+
+    // Map clave "carrera|semestre" -> {sum, n}
+    const key = (c, s) => `${c}|||${s}`;
+    const agg = new Map();
+    const carrerasSet = new Set();
+    const semSet = new Set();
+
+    for (const r of filtered) {
+      const c = String(r.carrera);
+      const s = String(r.semestre);
+      carrerasSet.add(c);
+      semSet.add(s);
+      const k = key(c, s);
+      const curr = agg.get(k) || { sum:0, n:0 };
+      curr.sum += Number(r.calificacion);
+      curr.n += 1;
+      agg.set(k, curr);
+    }
+
+    const carreras = Array.from(carrerasSet).sort((a,b)=>a.localeCompare(b));
+    const semestres = Array.from(semSet).map(Number).sort((a,b)=>a-b).map(String);
+
+    // Series por carrera
+    const series = carreras.map(c => {
+      const ys = semestres.map(s => {
+        const o = agg.get(key(c, s));
+        return o ? +(o.sum/o.n).toFixed(2) : null;
+      });
+      return { name: c, y: ys };
+    });
+
+    return { carreras, semestres, series };
+  }
+
+  // Construir tabla pivote
+  function renderTable(semestres, carreras, series) {
+    const thead = document.getElementById('thead');
+    const tbody = document.getElementById('tbody');
+    // Header
+    thead.innerHTML = `<tr>
+      <th style="color:#fff;">Semestre</th>
+      ${carreras.map(c => `<th style="color:#fff;">${c}</th>`).join('')}
+    </tr>`;
+
+    // Cuerpo
+    let html = '';
+    semestres.forEach((s, idx) => {
+      html += '<tr>';
+      html += `<td>${s}</td>`;
+      carreras.forEach((c, j) => {
+        const val = series[j].y[idx];
+        html += `<td>${val !== null ? val : '-'}</td>`;
+      });
+      html += '</tr>';
+    });
+    tbody.innerHTML = html;
+  }
+
+  // Gráfica Plotly
+  function renderChart(semestres, series) {
+    const traces = series.map(s => ({
+      x: semestres,
+      y: s.y,
+      type: 'bar',
+      name: s.name,
+      opacity: 0.9,
+      hovertemplate: 'Semestre %{x}<br>Promedio: %{y:.2f}<extra>'+s.name+'</extra>'
+    }));
+
+    const layout = {
+      barmode: 'group',
+      xaxis: { title: 'Semestre', gridcolor: 'rgba(0,0,0,0.05)' },
+      yaxis: { title: 'Promedio (0–10)', range: [0, 10], gridcolor: 'rgba(0,0,0,0.05)' },
+      margin: { t: 10, r: 16, b: 56, l: 56 },
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      legend: { orientation: 'h', y: -0.2 }
+    };
+    Plotly.newPlot('bar', traces, layout, {displayModeBar: true, responsive: true});
+  }
+
+  // Primera render con todos seleccionados
+  function apply() {
+    const selC = getSelectedValues(selCarrera);
+    const selS = getSelectedValues(selSem);
+    const { carreras, semestres, series } = computeGrouped(selC, selS);
+    renderChart(semestres, series);
+    renderTable(semestres, carreras, series);
+  }
+
+  document.getElementById('btnAplicar').addEventListener('click', function(e){
+    e.preventDefault();
+    apply();
+  });
+
+  document.getElementById('btnReset').addEventListener('click', function(){
+    fillSelect(selCarrera, carrerasCtx);
+    fillSelect(selSem, semestresCtx);
+    apply();
+  });
+
+  // Render inicial
+  apply();
+})();
+</script>
+
+{% endblock %}

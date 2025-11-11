@@ -1,0 +1,359 @@
+{% extends "page/base.html" %}
+{% load static %} 
+{% block title %}Dashboard - Sistema de Gestión Estudiantil{% endblock %}
+
+{% block content %}
+<div class="app-container">
+    <div class="tabs-container">
+        <div class="tabs-header">
+            <button class="tab-button active" data-tab="dashboard">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Dashboard</span>
+            </button>
+            <button class="tab-button" data-tab="registro">
+                <i data-lucide="user-plus"></i>
+                <span>Registro</span>
+            </button>
+            <button class="tab-button" data-tab="data">
+                <i data-lucide="database"></i>
+                <span>Datos</span>
+            </button>
+            <button class="tab-button" data-tab="exportar">
+                <i data-lucide="download"></i>
+                <span>Exportar</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="tab-content active" id="dashboard">
+        <div class="dashboard-header">
+            <h1>Dashboard Principal</h1>
+            <p>Sistema de Gestión Estudiantil</p>
+
+            <!-- Controles de carga de CSV -->
+            <div class="toolbar" style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+                <input id="csvInput" type="file" accept=".csv" style="display:none" />
+                <button id="btnSelectCSV" class="btn-secondary" type="button">Seleccionar CSV</button>
+                <button id="btnImportCSV" class="btn-primary" type="button">Cargar al dashboard</button>
+                <button id="btnClearData" class="btn-secondary" type="button">Limpiar datos</button>
+                <small id="csvLoadedHint" class="muted" style="display:none; margin-left:8px;">CSV cargado ✓</small>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i data-lucide="users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Estudiantes</h3>
+                    <p class="stat-value" id="totalStudents">0</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <i data-lucide="alert-triangle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Factores de Riesgo</h3>
+                    <p class="stat-value" id="riskFactors">0</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <i data-lucide="trending-up"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Promedio General</h3>
+                    <p class="stat-value" id="kpiPromedioGeneral">0.0</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <i data-lucide="activity"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Asistencia Promedio</h3>
+                    <p class="stat-value" id="kpiAsistencia">0%</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Distribución por Carrera</h3>
+                </div>
+                <canvas id="carreraChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Tipos de Riesgo</h3>
+                </div>
+                <canvas id="riskChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="registro">
+        <div class="registration-header">
+            <h1>Registro de Estudiantes</h1>
+            <p>Complete el formulario con los datos del estudiante</p>
+        </div>
+
+        <form id="studentForm" class="student-form">
+            <div class="form-section">
+                <h3>Información Personal</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nombreAlumno">Nombre Completo *</label>
+                        <input type="text" id="nombreAlumno" name="nombreAlumno" required>
+                        <span class="error-message"></span>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="correo">Correo *</label>
+                        <input type="text" id="correo" name="correo" required>
+                        <span class="error-message"></span>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="contraseña">Contraseña *</label>
+                        <input type="password" id="contraseña" name="contraseña" required>
+                        <span class="error-message"></span>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="telefonoAlumno">Teléfono *</label>
+                        <input type="tel" id="telefonoAlumno" name="telefonoAlumno" required>
+                        <span class="error-message"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Información Académica</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="carrera">Carrera *</label>
+                        <select id="carrera" name="carrera" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="Medicina">Medicina</option>
+                            <option value="Derecho">Derecho</option>
+                            <option value="Ingeniería">Ingeniería</option>
+                            <option value="Administración">Administración</option>
+                        </select>
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="semestre">Semestre *</label>
+                        <input type="number" id="semestre" name="semestre" min="1" max="12" required>
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="materia">Materia *</label>
+                        <select id="materia" name="materia" required>
+                            <option value="">Seleccionar...</option>
+                        </select>
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="unidad">Unidad *</label>
+                        <input type="number" id="unidad" name="unidad" min="1" max="5" required>
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="asistencias">Asistencias *</label>
+                        <input type="number" id="asistencias" name="asistencias" min="0" max="100" required>
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="promedio">Promedio *</label>
+                        <input type="number" id="promedio" name="promedio" min="0" max="10" step="0.1" required>
+                        <span class="error-message"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Factores de Riesgo</h3>
+                <div class="checkbox-grid">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="riesgo_academico" value="1">
+                        <span>Académico</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="riesgo_economico" value="1">
+                        <span>Económico</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="riesgo_psicosocial" value="1">
+                        <span>Psicosocial</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="riesgo_institucional" value="1">
+                        <span>Institucional</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="riesgo_tecnologico" value="1">
+                        <span>Tecnológico</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="riesgo_contextual" value="1">
+                        <span>Contextual</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="resetForm()">Limpiar</button>
+                <button type="submit" class="btn-primary">
+                    <i data-lucide="save"></i>
+                    Guardar Estudiante
+                </button>
+            </div>
+        </form>
+
+        <div id="successMessage" class="success-message" style="display: none;">
+            <i data-lucide="check-circle"></i>
+            <span>¡Estudiante registrado exitosamente!</span>
+        </div>
+    </div>
+
+    <div class="tab-content" id="data">
+        <div class="data-header">
+            <h1>Datos de Estudiantes</h1>
+            <p>Vista completa de todos los estudiantes registrados</p>
+        </div>
+
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Carrera</th>
+                        <th>Semestre</th>
+                        <th>Materia</th>
+                        <th>Unidad</th>
+                        <th>Calificación</th>
+                        <th>Asistencias</th>
+                        <th>Fecha de Registro</th>
+                        <th>Riesgo Académico</th>
+                        <th>Riesgo Económico</th>
+                        <th>Riesgo Psicosocial</th>
+                        <th>Riesgo Institucional</th>
+                        <th>Riesgo Tecnológico</th>
+                        <th>Riesgo Contextual</th>
+                        <th>Total Riesgos</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                    <tr>
+                        <td colspan="8" class="no-data">No hay datos para mostrar</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-content" id="exportar">
+        <div class="export-header">
+            <h1>Exportar Datos</h1>
+            <p>Descargue los datos en el formato que prefiera</p>
+        </div>
+
+        <div class="export-options">
+            <div class="export-card" onclick="exportData('json')">
+                <div class="export-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i data-lucide="file-json"></i>
+                </div>
+                <h3>JSON</h3>
+                <p>Formato estructurado para desarrollo</p>
+                <button class="btn-export">
+                    <i data-lucide="download"></i>
+                    Exportar JSON
+                </button>
+            </div>
+
+            <div class="export-card" onclick="exportData('csv')">
+                <div class="export-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <i data-lucide="file-spreadsheet"></i>
+                </div>
+                <h3>CSV</h3>
+                <p>Compatible con Excel y hojas de cálculo</p>
+                <button class="btn-export">
+                    <i data-lucide="download"></i>
+                    Exportar CSV
+                </button>
+            </div>
+
+            <div class="export-card" onclick="exportData('excel')">
+                <div class="export-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <i data-lucide="file-bar-chart"></i>
+                </div>
+                <h3>Excel</h3>
+                <p>Formato .xlsx con datos y resumen</p>
+                <button class="btn-export">
+                    <i data-lucide="download"></i>
+                    Exportar Excel
+                </button>
+            </div>
+        </div>
+
+        <div class="export-preview">
+            <h3>Vista Previa de Datos</h3>
+            <div class="table-container">
+                <table id="previewTable">
+                    <thead>
+                        <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Carrera</th>
+                        <th>Semestre</th>
+                        <th>Materia</th>
+                        <th>Unidad</th>
+                        <th>Calificación</th>
+                        <th>Asistencias</th>
+                        <th>Fecha de Registro</th>
+                        <th>Riesgo Académico</th>
+                        <th>Riesgo Económico</th>
+                        <th>Riesgo Psicosocial</th>
+                        <th>Riesgo Institucional</th>
+                        <th>Riesgo Tecnológico</th>
+                        <th>Riesgo Contextual</th>
+                        <th>Total Riesgos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewTableBody">
+                        <tr>
+                            <td colspan="5" class="no-data">No hay datos para mostrar</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'page/app.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+{% endblock %}

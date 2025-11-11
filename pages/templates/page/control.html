@@ -1,0 +1,178 @@
+{% extends 'page/base.html' %}
+{% block content %}
+
+<div class="dashboard-header">
+  <h1>Gráfica de Control (p-chart)</h1>
+  <p>Proporción de <strong>reprobación</strong> por semestre (calificaciones &lt; 7).</p>
+</div>
+
+<!-- Carga CSV centrada -->
+<form method="post" enctype="multipart/form-data"
+      class="pareto-controls"
+      style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:1rem;">
+  {% csrf_token %}
+  <div class="form-group" style="max-width:520px; width:100%;">
+    <label style="font-weight:700;">Archivo CSV</label>
+    <input type="file" name="csv_file" accept=".csv" required style="display:block; margin:0 auto;">
+    <small class="text-secondary">
+      Requiere columnas de <strong>semestre</strong> y <strong>calificación</strong> (escala 0–10).
+      La reprobación se calcula como calificaciones &lt; 7.
+    </small>
+  </div>
+  <div class="form-actions" style="margin-top:0.25rem;">
+    <button type="submit" class="btn-primary">Cargar datos</button>
+  </div>
+</form>
+
+{% if message %}
+  <p class="mt-2" style="color:#2563eb;"><em>{{ message }}</em></p>
+{% endif %}
+
+<!-- KPI -->
+<div id="kpis" class="stats-grid" style="display:none;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);">
+      <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-activity" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    <div class="stat-info">
+      <h3>Promedio Global</h3>
+      <div class="stat-value" id="kpiMean">0%</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#ef4444,#f87171);">
+      <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-alert-triangle" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div class="stat-info">
+      <h3>Puntos Fuera de Control</h3>
+      <div class="stat-value" id="kpiOut">0</div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráfico -->
+<div class="chart-card" id="chartCard" style="display:none;">
+  <div class="chart-header"><h3 id="chartTitle">Control de Reprobación</h3></div>
+  <div id="controlPlot" style="height:520px;"></div>
+</div>
+
+<!-- Tabla -->
+<div class="chart-card" id="tableCard" style="display:none; margin-top:1rem;">
+  <div class="chart-header"><h3>Resumen por semestre</h3></div>
+  <div class="table-container">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>Semestre</th>
+          <th>Total (n)</th>
+          <th>Reprobados (x)</th>
+          <th>Proporción p = x/n</th>
+          <th>LCL</th>
+          <th>UCL</th>
+        </tr>
+      </thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+(function() {
+  const rows = {{ rows_json|safe }};  // [{semestre,total,reprob}]
+  if (!Array.isArray(rows) || rows.length === 0) return;
+
+  document.getElementById('kpis').style.display = 'grid';
+  document.getElementById('chartCard').style.display = 'block';
+  document.getElementById('tableCard').style.display = 'block';
+
+  function compute() {
+    const sems = rows.map(r => r.semestre);
+    const n = rows.map(r => Number(r.total) || 0);
+    const x = rows.map(r => Math.max(0, Number(r.reprob) || 0));
+    const p = n.map((ni, i) => ni > 0 ? x[i] / ni : null);
+
+    const X = x.reduce((s,v)=>s+v,0);
+    const N = n.reduce((s,v)=>s+v,0);
+    const pbar = (N > 0) ? (X / N) : 0;
+
+    const lcl = n.map(ni => {
+      if (ni <= 0) return null;
+      const term = 3*Math.sqrt(pbar*(1-pbar)/ni);
+      return Math.max(0, pbar - term);
+    });
+    const ucl = n.map(ni => {
+      if (ni <= 0) return null;
+      const term = 3*Math.sqrt(pbar*(1-pbar)/ni);
+      return Math.min(1, pbar + term);
+    });
+
+    const outIdx = [];
+    p.forEach((pi, i) => { if (pi!=null && (pi<lcl[i] || pi>ucl[i])) outIdx.push(i); });
+    return { sems, n, x, p, pbar, lcl, ucl, outIdx };
+  }
+
+  function percent(v){ return (v*100).toFixed(2)+'%'; }
+
+  const { sems, n, x, p, pbar, lcl, ucl, outIdx } = compute();
+
+  // KPIs
+  document.getElementById('kpiMean').textContent = percent(pbar || 0);
+  document.getElementById('kpiOut').textContent  = outIdx.length;
+
+  // Tabla
+  document.getElementById('tb').innerHTML = sems.map((s, i) => {
+    const pi = p[i]; const L = lcl[i]; const U = ucl[i];
+    return `<tr>
+      <td>${s}</td>
+      <td>${n[i]}</td>
+      <td>${x[i]}</td>
+      <td>${pi!=null ? percent(pi) : '-'}</td>
+      <td>${L!=null ? percent(L) : '-'}</td>
+      <td>${U!=null ? percent(U) : '-'}</td>
+    </tr>`;
+  }).join('');
+
+  // Gráfico
+  const traceP = {
+    x: sems, y: p.map(v => v!=null ? v*100 : null),
+    mode: 'lines+markers', name: 'Proporción (%)',
+    hovertemplate: '%{x}<br>%{y:.2f}%<extra></extra>'
+  };
+  const center = {
+    x: sems, y: sems.map(()=>pbar*100),
+    mode: 'lines', name: 'Centro (p̄)', line: { dash: 'dash' },
+    hovertemplate: 'Centro: %{y:.2f}%<extra></extra>'
+  };
+  const lclLine = {
+    x: sems, y: lcl.map(v => v!=null ? v*100 : null),
+    mode: 'lines', name: 'LCL', line: { dash: 'dot' },
+    hovertemplate: 'LCL: %{y:.2f}%<extra></extra>'
+  };
+  const uclLine = {
+    x: sems, y: ucl.map(v => v!=null ? v*100 : null),
+    mode: 'lines', name: 'UCL', line: { dash: 'dot' },
+    hovertemplate: 'UCL: %{y:.2f}%<extra></extra>'
+  };
+  const outPts = {
+    x: outIdx.map(i => sems[i]),
+    y: outIdx.map(i => p[i]*100),
+    mode: 'markers', name: 'Fuera de control',
+    marker: { size: 10, symbol: 'diamond-open', line: { width: 2 } },
+    hovertemplate: '%{x}<br>Fuera de control: %{y:.2f}%<extra></extra>'
+  };
+
+  const layout = {
+    margin: { t: 10, r: 16, b: 60, l: 70 },
+    xaxis: { title: 'Semestre', gridcolor: 'rgba(0,0,0,0.05)' },
+    yaxis: { title: 'Proporción (%)', range: [0,100], gridcolor: 'rgba(0,0,0,0.05)' },
+    legend: { orientation: 'h', y: -0.25 },
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+  };
+
+  Plotly.newPlot('controlPlot', [traceP, center, lclLine, uclLine, outPts], layout, {displayModeBar: true, responsive: true});
+})();
+</script>
+
+{% endblock %}

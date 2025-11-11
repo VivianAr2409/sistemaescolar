@@ -1,0 +1,57 @@
+{% extends "page/base.html" %}
+{% load static %}
+
+{% block title %}Iniciar sesión{% endblock %}
+
+{% block content %}
+<div class="app-container" style="min-height:70vh; display:flex; align-items:center; justify-content:center;">
+  <div class="card" style="max-width:440px; width:100%; padding:2rem; box-shadow: var(--shadow-lg); border-radius:16px; background: var(--card-bg);">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:1rem;">
+      <div class="logo-icon" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:12px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color:#fff;">
+        <i data-lucide="lock"></i>
+      </div>
+      <div>
+        <h2 style="color:var(--text-primary);">Accede a tu cuenta</h2>
+        <p class="muted" style="margin-top:2px;">Sistema de Gestión Estudiantil</p>
+      </div>
+    </div>
+
+    {% if error %}
+      <div class="alert" style="background:#fff1f2; color:#991b1b; padding:0.75rem 1rem; border-radius:8px; margin-bottom:1rem;">
+        Usuario o contraseña inválidos.
+      </div>
+    {% endif %}
+
+    <form method="post" novalidate style="display:flex; flex-direction:column; gap:1rem;">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="coreo" class="muted" style="display:block; margin-bottom:6px;">Correo</label>
+        <input type="text" name="correo" autofocus required id="correo" class="input" />
+      </div>
+
+      <div class="form-group">
+        <label for="contraseña" class="muted" style="display:block; margin-bottom:6px;">Contraseña</label>
+        <input type="password" name="contraseña" required id="contraseña" class="input" />
+      </div>
+
+      <div style="margin-top:10px;">
+        <span class="muted">¿No tienes cuenta?</span>
+        <a href="{% url 'registro' %}" 
+          style="margin-left:5px; color:#007bff; text-decoration:none;">
+          Regístrate
+        </a>
+      </div>
+
+      <button type="submit" class="btn-primary" style="width:100%; justify-content:center;">
+        <i data-lucide="log-in"></i>
+        <span>Ingresar</span>
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script>lucide.createIcons();</script>
+{% endblock %}

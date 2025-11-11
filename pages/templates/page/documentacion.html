@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - Sistema Escolar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .back-button {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .back-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-50%) translateX(-5px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            padding: 0;
+            overflow-x: auto;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .nav-tab {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover {
+            color: #495057;
+            background: #e9ecef;
+        }
+
+        .nav-tab.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+            background: white;
+        }
+
+        /* Content Sections */
+        .content {
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .section h3 {
+            color: #3498db;
+            margin: 25px 0 15px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #3498db;
+        }
+
+        .card h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 1px solid #e9ecef;
+        }
+
+        .step-number {
+            background: #3498db;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        /* Table Styles */
+        .simple-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .simple-table th, .simple-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .simple-table th {
+            background: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+
+        .simple-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Alert Styles */
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .alert-info {
+            background: #d6eaf8;
+            border-left: 4px solid #3498db;
+            color: #2c3e50;
+        }
+
+        .alert-warning {
+            background: #fef9e7;
+            border-left: 4px solid #f39c12;
+            color: #7d6608;
+        }
+
+        .alert-success {
+            background: #d5f5e3;
+            border-left: 4px solid #27ae60;
+            color: #145a32;
+        }
+
+        /* Footer */
+        .footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .nav-tab {
+                text-align: left;
+                border-bottom: 1px solid #e9ecef;
+                border-left: 3px solid transparent;
+            }
+            
+            .nav-tab.active {
+                border-left-color: #3498db;
+                border-bottom-color: #e9ecef;
+            }
+            
+            .back-button {
+                position: relative;
+                left: 0;
+                top: 0;
+                transform: none;
+                margin-bottom: 15px;
+                display: inline-flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="{% url 'inicio' %}" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+                Volver al Sistema
+            </a>
+            <h1><i class="fas fa-book"></i> Manual de Usuario</h1>
+            <p>Guía completa para usar el Sistema de Gestión Estudiantil</p>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="nav-tab active" onclick="showSection('acceso')">
+                <i class="fas fa-sign-in-alt"></i> Acceso
+            </button>
+            <button class="nav-tab" onclick="showSection('empezar')">
+                <i class="fas fa-play"></i> Cómo Empezar
+            </button>
+            <button class="nav-tab" onclick="showSection('herramientas')">
+                <i class="fas fa-tools"></i> Herramientas
+            </button>
+            <button class="nav-tab" onclick="showSection('ejemplos')">
+                <i class="fas fa-tasks"></i> Ejemplos
+            </button>
+            <button class="nav-tab" onclick="showSection('preguntas')">
+                <i class="fas fa-question-circle"></i> Preguntas
+            </button>
+        </nav>
+
+        <div class="content">
+            <!-- Sección Acceso -->
+            <div id="acceso" class="section active">
+                <h2>Acceso al Sistema</h2>
+                
+                <div class="card">
+                    <h4><i class="fas fa-user-plus"></i> Para Usuarios Nuevos</h4>
+                    <div class="step">
+                        <span class="step-number">1</span> Haz clic en "Registrarse"
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span> Llena el formulario con tus datos
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span> Confirma tu correo electrónico
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-user-check"></i> Para Usuarios Existentes</h4>
+                    <div class="step">
+                        <span class="step-number">1</span> Ingresa tu correo y contraseña
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span> Haz clic en "Iniciar Sesión"
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span> ¡Listo! Entras al dashboard
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Cómo Empezar -->
+            <div id="empezar" class="section">
+                <h2>Cómo Empezar a Usar el Sistema</h2>
+                
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <strong>Prepara tus datos:</strong> Necesitas un archivo CSV o Excel con información de estudiantes.
+                </div>
+
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <strong>Estructura básica del archivo:</strong>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Tu CSV debe tener columnas como: Nombre, Carrera, Calificación, Semestre
+                    </div>
+                </div>
+
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <strong>Sube el archivo:</strong> 
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Haz clic en "Seleccionar CSV"</li>
+                        <li>Busca tu archivo en la computadora</li>
+                        <li>Haz clic en "Cargar datos"</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <strong>¡Listo!</strong> Tus datos están cargados y puedes empezar a analizar.
+                </div>
+            </div>
+
+            <!-- Sección Herramientas -->
+            <div id="herramientas" class="section">
+                <h2>Herramientas de Análisis</h2>
+                
+                <div class="card">
+                    <h4><i class="fas fa-chart-pie"></i> Distribución por Carrera</h4>
+                    <p>Muestra cuántos estudiantes hay en cada carrera. Perfecto para ver la distribución general.</p>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Tipo de Riesgo</h4>
+                    <p>Identifica estudiantes en riesgo académico (Bajo, Medio, Alto).</p>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-chart-bar"></i> Histograma</h4>
+                    <p>Gráfico de barras que muestra cómo se distribuyen las calificaciones.</p>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-chart-line"></i> Diagrama de Pareto</h4>
+                    <p>Enfócate en los problemas más importantes primero (regla 80/20).</p>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-chart-area"></i> Gráfica de Control</h4>
+                    <p>Monitorea el rendimiento a través del tiempo.</p>
+                </div>
+
+                <h3>¿Cómo usar las herramientas?</h3>
+                <div class="step">
+                    <span class="step-number">1</span> Sube tus datos CSV
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span> Elige una herramienta del menú
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span> Configura los parámetros si es necesario
+                </div>
+                <div class="step">
+                    <span class="step-number">4</span> Haz clic en "Generar Gráfico"
+                </div>
+            </div>
+
+            <!-- Sección Ejemplos -->
+            <div id="ejemplos" class="section">
+                <h2>Ejemplos de Uso</h2>
+                
+                <div class="card">
+                    <h4><i class="fas fa-graduation-cap"></i> Caso: Mejorar el Rendimiento</h4>
+                    <p><strong>Objetivo:</strong> Reducir la reprobación en la facultad</p>
+                    
+                    <div class="step">
+                        <span class="step-number">1</span> Sube datos de 500 estudiantes
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span> Usa "Tipo de Riesgo" - encuentras 15% en alto riesgo
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span> Diagrama de Pareto muestra que 3 materias causan 80% de problemas
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span> Gráfica de Control confirma que el problema empeora cada semestre
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span> Exportas el reporte y presentas a directivos
+                    </div>
+                </div>
+
+                <div class="alert alert-success">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>Resultado:</strong> Enfocas recursos en las materias problemáticas y mejoras el rendimiento general.
+                </div>
+            </div>
+
+            <!-- Sección Preguntas -->
+            <div id="preguntas" class="section">
+                <h2>Preguntas Frecuentes</h2>
+                
+                <table class="simple-table">
+                    <tr>
+                        <th>Pregunta</th>
+                        <th>Respuesta</th>
+                    </tr>
+                    <tr>
+                        <td>¿Puedo tener varias sesiones abiertas?</td>
+                        <td>No, por seguridad solo una sesión por usuario</td>
+                    </tr>
+                    <tr>
+                        <td>¿Se guardan mis análisis?</td>
+                        <td>Los datos no se guardan, pero puedes exportar reportes PDF</td>
+                    </tr>
+                    <tr>
+                        <td>¿Olvidé mi contraseña?</td>
+                        <td>Haz clic en "¿Olvidaste tu contraseña?" en el login</td>
+                    </tr>
+                    <tr>
+                        <td>¿Puedo comparar varios archivos?</td>
+                        <td>No directamente, pero puedes unir datos en un solo CSV</td>
+                    </tr>
+                </table>
+
+                <h3>Problemas Comunes</h3>
+                <div class="card">
+                    <h4><i class="fas fa-times-circle"></i> Error al cargar archivo</h4>
+                    <p><strong>Solución:</strong> Verifica que tu CSV tenga las columnas correctas</p>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-chart-line"></i> Gráfico no se genera</h4>
+                    <p><strong>Solución:</strong> Revisa que las columnas seleccionadas existan en tus datos</p>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-user-lock"></i> No puedo iniciar sesión</h4>
+                    <p><strong>Solución:</strong> Verifica mayúsculas/minúsculas en tu contraseña</p>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2025 Sistema de Gestión Estudiantil - Manual de Usuario</p>
+            <p style="margin-top: 10px; opacity: 0.8;">
+                <i class="fas fa-envelope"></i> soporte@sistema.edu.mx | 
+                <i class="fas fa-phone"></i> +52 800 123 4567
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function showSection(sectionId) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Quitar active de todos los tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Mostrar sección seleccionada
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Activar tab seleccionado
+            event.currentTarget.classList.add('active');
+        }
+
+        // Botón de regreso seguro
+        document.querySelector('.back-button').addEventListener('click', function(e) {
+            // Si no funciona el enlace, redirigir manualmente
+            if (!window.location.href.includes('inicio')) {
+                e.preventDefault();
+                window.location.href = '/inicio/';
+            }
+        });
+    </script>
+</body>
+</html>

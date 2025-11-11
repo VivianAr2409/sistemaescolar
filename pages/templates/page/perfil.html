@@ -1,0 +1,39 @@
+{% extends 'page/base.html' %}
+{% load static %}
+
+{% block title %}Perfil del Maestro{% endblock %}
+
+{% block content %}
+<section class="perfil-container">
+    <div class="perfil-card">
+        <div class="perfil-header">
+            <div class="perfil-avatar">
+                <i data-lucide="user"></i>
+            </div>
+            <div class="perfil-info">
+                <h2>{{ maestro.nombreMaestro }}</h2>
+                <p class="perfil-rol"> Docente </p>
+            </div>
+        </div>
+
+        <div class="perfil-body">
+            <h3>Información Personal</h3>
+            <ul class="perfil-datos">
+                <li><strong>Nombre:</strong> {{ maestro.nombreMaestro }}</li>
+                <li><strong>Correo institucional:</strong> {{ maestro.correo }}</li>
+                <li><strong>Teléfono:</strong> {{ maestro.telefonoMaestro }}</li>
+            </ul>
+
+            <div class="perfil-actions">
+                <button class="header-btn" style="gap:.5rem;">
+                    <i data-lucide="edit"></i> Editar perfil
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

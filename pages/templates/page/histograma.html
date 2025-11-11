@@ -1,0 +1,155 @@
+{% extends 'page/base.html' %}
+{% block content %}
+
+<!-- Header al estilo dashboard -->
+<div class="dashboard-header">
+  <h1>Histograma de Calificaciones (0–10)</h1>
+  <p>Distribución general y comparación por carrera (si está en el CSV).</p>
+</div>
+
+<!-- Formulario centrado -->
+<form method="post" enctype="multipart/form-data" 
+      class="pareto-controls"
+      style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:1rem;">
+  {% csrf_token %}
+  
+  <div class="form-group" style="max-width:480px; width:100%;">
+    <label style="font-weight:700;">Archivo CSV</label>
+    <input type="file" name="csv_file" accept=".csv" required style="display:block; margin:0 auto;">
+    <small class="text-secondary">
+      Debe incluir una columna de calificaciones (0–10). Si hay columna de carrera/programa,
+      se comparan lado a lado.
+    </small>
+  </div>
+
+  <div class="form-actions" style="margin-top:0.5rem;">
+    <button type="submit" class="btn-primary" style="display:flex; align-items:center; gap:0.4rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-upload" width="18" height="18" 
+           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" x2="12" y1="3" y2="15"/>
+      </svg>
+      Generar gráfico
+    </button>
+  </div>
+</form>
+
+{% if message %}
+  <p class="mt-2" style="color:#2563eb;"><em>{{ message }}</em></p>
+{% endif %}
+
+{% if stats %}
+  <!-- KPIs -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);">
+        <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-users" width="32" height="32" 
+             viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <h3>OBSERVACIONES</h3>
+        <div class="stat-value">{{ stats.n }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#34d399,#10b981);">
+        <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-star" width="32" height="32" 
+             viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9 12 2"/>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <h3>PROMEDIO</h3>
+        <div class="stat-value">{{ stats.mean }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#60a5fa,#3b82f6);">
+        <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-activity" width="32" height="32" 
+             viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <h3>DESV. ESTÁNDAR</h3>
+        <div class="stat-value">{{ stats.stdev }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#fbbf24,#f59e0b);">
+        <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-range" width="32" height="32" 
+             viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M7 21v-4"/><path d="M7 7V3"/><path d="M17 21V8"/><path d="M17 5V3"/>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <h3>RANGO (MIN–MAX)</h3>
+        <div class="stat-value">{{ stats.min }} – {{ stats.max }}</div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Card de la gráfica -->
+<div class="chart-card">
+  <div class="chart-header">
+    <h3>Distribución de calificaciones por carrera (barras “dodge” + KDE)</h3>
+  </div>
+  <div id="hist" style="height:460px;"></div>
+</div>
+
+<!-- Plotly -->
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+(function () {
+  const series = {{ series_json|safe }};
+  const kde    = {{ kde_json|safe }};
+
+  if (!Array.isArray(series) || series.length === 0) {
+    document.getElementById('hist').innerHTML =
+      '<div class="no-data">Sube un CSV con calificaciones (0–10) para ver el histograma.</div>';
+    return;
+  }
+
+  const traces = [];
+  for (const s of series) {
+    traces.push({
+      x: s.values,
+      type: 'histogram',
+      name: s.name,
+      opacity: 0.9,
+      xbins: { start: 0, end: 10, size: 0.5 },
+      hovertemplate: '%{x:.2f}<br>Frecuencia: %{y}<extra>'+s.name+'</extra>'
+    });
+  }
+  for (const k of kde) {
+    traces.push({
+      x: k.x, y: k.y,
+      type: 'scatter', mode: 'lines',
+      name: k.name + ' — KDE',
+      hovertemplate: '%{x:.2f}<br>KDE: %{y:.2f}<extra>'+k.name+'</extra>'
+    });
+  }
+
+  Plotly.newPlot('hist', traces, {
+    barmode: 'group',
+    xaxis: { title: 'Calificación', range: [0, 10], gridcolor: 'rgba(0,0,0,0.05)' },
+    yaxis: { title: 'Frecuencia', gridcolor: 'rgba(0,0,0,0.05)' },
+    margin: { t: 10, r: 16, b: 56, l: 56 },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    legend: { orientation: 'h', y: -0.2 }
+  }, { displayModeBar: true, responsive: true });
+})();
+</script>
+
+{% endblock %}
