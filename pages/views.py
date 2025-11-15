@@ -6,11 +6,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from math import sqrt, pi, exp
+from django.http import JsonResponse
+
 
 # BASE DE DATOS - MONGODB
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Maestro
+from .models import Maestro, Alumno
 from .decorators import maestro_login_required  # ← AGREGAR ESTE IMPORT
 
 
@@ -18,6 +20,8 @@ def home(request):
     contexto = {
         'maestro_id': request.session.get('maestro_id'),
         'maestro_correo': request.session.get('maestro_correo'),
+        'alumno_id': request.session.get('alumno_id'),
+        'alumno_correo': request.session.get('alumno_correo'),
     }
     return render(request, 'page/home.html', contexto)
 
@@ -596,22 +600,30 @@ def registro(request):
 
 def login_maestro(request):
     request.session.flush()
-    
-    if request.method == 'POST':
-        correo = request.POST['correo']  
-        contraseña = request.POST['contraseña']
 
-        try:
-            maestro = Maestro.objects.get(
-                correo=correo, 
-                contraseña=contraseña,
-                )
-            # Guardar en sesión
+    if request.method == 'POST':
+        correo = request.POST.get('correo', '').strip()
+        contraseña = request.POST.get('contraseña', '')
+
+        # 1. Intentar maestro
+        maestro = Maestro.objects.filter(correo=correo, contraseña=contraseña).first()
+        if maestro:
             request.session['maestro_id'] = maestro.id
             request.session['maestro_correo'] = maestro.correo
-            return redirect('inicio')  
-        except Maestro.DoesNotExist:
-            return render(request, 'page/login.html', {'error': 'Usuario o contraseña inválidos.'})
+            return redirect('inicio')
+
+        # 2. Intentar alumno
+        alumno = Alumno.objects.filter(correo=correo, contraseña=contraseña).first()
+        if alumno:
+            request.session['alumno_id'] = alumno.id
+            request.session['alumno_correo'] = alumno.correo
+            return redirect('inicio')
+
+        # 3. Ninguno coincide
+        return render(request, 'page/login.html', {
+            'error': "Usuario o contraseña inválidos."
+        })
+
     return render(request, 'page/login.html')
 
 def logout_maestro(request):
@@ -630,6 +642,25 @@ def perfil(request):
 
     contexto = {'maestro': maestro}
     return render(request, 'page/perfil.html', contexto)
+
+def registrar_alumno(request):
+    if request.method == "POST":
+        print(request.POST)
+        Alumno.objects.create(
+            nombreAlumno=request.POST.get("nombreAlumno"),
+            correo=request.POST.get("correo"),
+            contraseña=request.POST.get("contraseña"),
+            telefonoAlumno=request.POST.get("telefonoAlumno"),
+            carrera=request.POST.get("carrera"),
+            semestre=request.POST.get("semestre"),
+            materia=request.POST.get("materia"),
+            unidad=request.POST.get("unidad"),
+            asistencias=request.POST.get("asistencias"),
+            promedio=request.POST.get("promedio"),
+        )
+        return JsonResponse({"status": "ok"})
+    return JsonResponse({"status": "ok"})
+
 
 @maestro_login_required
 def documentacion(request):
