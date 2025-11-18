@@ -59,11 +59,19 @@
     <aside class="sidebar">
         <nav class="sidebar-nav">
             <ul class="sidebar-menu">
-                <li><a href="{% url 'inicio' %}">Inicio</a></li>
-                <li><a href="{% url 'estratificacion' %}">Estratificación</a></li>
-                <li><a href="{% url 'histograma' %}">Histograma</a></li>
-                <li><a href="{% url 'pareto' %}">Diagrama de Pareto</a></li>
-                <li><a href="{% url 'control' %}">Gráfica de Control</a></li>
+                <li><a href="{% url 'inicio' %}"><i data-lucide="home"></i> Inicio</a></li>
+                
+                {% if request.session.tipo_usuario == 'maestro' %}
+                    <!-- Opciones solo para maestros -->
+                    <li><a href="{% url 'estratificacion' %}"><i data-lucide="layers"></i> Estratificación</a></li>
+                    <li><a href="{% url 'histograma' %}"><i data-lucide="bar-chart"></i> Histograma</a></li>
+                    <li><a href="{% url 'pareto' %}"><i data-lucide="trending-up"></i> Diagrama de Pareto</a></li>
+                    <li><a href="{% url 'control' %}"><i data-lucide="activity"></i> Gráfica de Control</a></li>
+                {% elif request.session.tipo_usuario == 'alumno' %}
+                    <!-- Opciones solo para alumnos -->
+                    <li><a href="{% url 'calificaciones_alumno' %}"><i data-lucide="clipboard-list"></i> Mis Calificaciones</a></li>
+                    <li><a href="{% url 'perfil' %}"><i data-lucide="user"></i> Mi Perfil</a></li>
+                {% endif %}
             </ul>
         </nav>
     </aside>

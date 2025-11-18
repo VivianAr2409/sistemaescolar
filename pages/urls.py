@@ -15,5 +15,6 @@ urlpatterns = [
     path('control/', maestro_login_required(views.control), name='control'),
     path('documentacion/', views.documentacion, name='documentacion'),
     path('perfil/', views.perfil, name='perfil'),
+    path('calificaciones/', views.calificaciones_alumno, name='calificaciones_alumno'),
 ]
 

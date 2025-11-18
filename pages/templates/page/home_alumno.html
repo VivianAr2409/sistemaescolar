@@ -1,0 +1,64 @@
+{% extends 'page/base.html' %}
+
+{% block title %}Inicio - Alumno{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center mb-4">
+                <i class="fas fa-graduation-cap"></i> Bienvenido, {{ nombre_usuario }}
+            </h1>
+            <p class="text-center lead">Sistema de Gestión Estudiantil</p>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <!-- Tarjeta de Calificaciones -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Mis Calificaciones</h5>
+                    <p class="card-text">Consulta tus calificaciones parciales y tu promedio general.</p>
+                    <a href="{% url 'calificaciones_alumno' %}" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> Ver Calificaciones
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta de Perfil -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-circle fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Mi Perfil</h5>
+                    <p class="card-text">Consulta y actualiza tu información personal.</p>
+                    <a href="{% url 'perfil' %}" class="btn btn-success">
+                        <i class="fas fa-id-card"></i> Ver Perfil
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información Importante</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check-circle text-success"></i> Revisa regularmente tus calificaciones</li>
+                        <li><i class="fas fa-check-circle text-success"></i> Mantén tu información de contacto actualizada</li>
+                        <li><i class="fas fa-check-circle text-success"></i> Consulta con tu maestro si tienes dudas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

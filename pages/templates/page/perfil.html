@@ -1,7 +1,13 @@
 {% extends 'page/base.html' %}
 {% load static %}
 
-{% block title %}Perfil del Maestro{% endblock %}
+{% block title %}
+    {% if tipo_usuario == 'maestro' %}
+        Perfil del Maestro
+    {% else %}
+        Perfil del Alumno
+    {% endif %}
+{% endblock %}
 
 {% block content %}
 <section class="perfil-container">
@@ -11,23 +17,55 @@
                 <i data-lucide="user"></i>
             </div>
             <div class="perfil-info">
-                <h2>{{ maestro.nombreMaestro }}</h2>
-                <p class="perfil-rol"> Docente </p>
+                {% if tipo_usuario == 'maestro' %}
+                    <h2>{{ usuario.nombreMaestro }}</h2>
+                    <p class="perfil-rol"><i data-lucide="briefcase"></i> Docente</p>
+                {% else %}
+                    <h2>{{ usuario.nombreAlumno }}</h2>
+                    <p class="perfil-rol"><i data-lucide="graduation-cap"></i> Estudiante</p>
+                {% endif %}
             </div>
         </div>
 
         <div class="perfil-body">
             <h3>Información Personal</h3>
             <ul class="perfil-datos">
-                <li><strong>Nombre:</strong> {{ maestro.nombreMaestro }}</li>
-                <li><strong>Correo institucional:</strong> {{ maestro.correo }}</li>
-                <li><strong>Teléfono:</strong> {{ maestro.telefonoMaestro }}</li>
+                {% if tipo_usuario == 'maestro' %}
+                    <li><strong>Nombre:</strong> {{ usuario.nombreMaestro }}</li>
+                    <li><strong>Correo institucional:</strong> {{ usuario.correo }}</li>
+                    <li><strong>Teléfono:</strong> {{ usuario.telefonoMaestro }}</li>
+                {% else %}
+                    <li><strong>Nombre:</strong> {{ usuario.nombreAlumno }}</li>
+                    <li><strong>Correo institucional:</strong> {{ usuario.correo }}</li>
+                    <li><strong>Teléfono:</strong> {{ usuario.telefonoAlumno|default:"No registrado" }}</li>
+                    {% if usuario.matricula %}
+                        <li><strong>Matrícula:</strong> {{ usuario.matricula }}</li>
+                    {% endif %}
+                    {% if usuario.carrera %}
+                        <li><strong>Carrera:</strong> {{ usuario.carrera }}</li>
+                    {% endif %}
+                    {% if usuario.semestre %}
+                        <li><strong>Semestre:</strong> {{ usuario.semestre }}</li>
+                    {% endif %}
+                    {% if usuario.promedio %}
+                        <li><strong>Promedio General:</strong> 
+                            <span class="badge {% if usuario.promedio >= 8 %}badge-success{% elif usuario.promedio >= 6 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {{ usuario.promedio|floatformat:2 }}
+                            </span>
+                        </li>
+                    {% endif %}
+                {% endif %}
             </ul>
 
             <div class="perfil-actions">
                 <button class="header-btn" style="gap:.5rem;">
                     <i data-lucide="edit"></i> Editar perfil
                 </button>
+                {% if tipo_usuario == 'alumno' %}
+                    <a href="{% url 'calificaciones_alumno' %}" class="header-btn" style="gap:.5rem; background-color: #28a745; margin-left: 10px;">
+                        <i data-lucide="bar-chart-2"></i> Ver Calificaciones
+                    </a>
+                {% endif %}
             </div>
         </div>
     </div>

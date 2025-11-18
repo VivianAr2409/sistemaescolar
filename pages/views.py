@@ -23,6 +23,14 @@ def home(request):
         'tipo_usuario': request.session.get('tipo_usuario'),
         'nombre_usuario': request.session.get('nombre_usuario'),
     }
+    
+    # Redirigir según el tipo de usuario
+    if request.session.get('tipo_usuario') == 'alumno':
+        return render(request, 'page/home_alumno.html', contexto)
+    elif request.session.get('tipo_usuario') == 'maestro':
+        return render(request, 'page/home.html', contexto)
+    
+    # Si no hay sesión, mostrar la página de inicio general
     return render(request, 'page/home.html', contexto)
 
 
@@ -687,6 +695,32 @@ def perfil(request):
         }
     
     return render(request, 'page/perfil.html', contexto)
+
+def calificaciones_alumno(request):
+    """Vista para que los alumnos vean sus calificaciones"""
+    if 'alumno_correo' not in request.session:
+        messages.error(request, "Debes iniciar sesión como alumno.")
+        return redirect('login')
+    
+    correo_sesion = request.session.get('alumno_correo')
+    alumno = Alumno.objects.filter(correo=correo_sesion).first()
+    
+    if not alumno:
+        messages.error(request, "No se encontró tu perfil.")
+        return redirect('inicio')
+    
+    # Calcular el promedio si no existe
+    if alumno.promedio == 0 or alumno.promedio is None:
+        alumno.calcular_promedio()
+        alumno.save()
+    
+    contexto = {
+        'alumno': alumno,
+        'tipo_usuario': 'alumno',
+        'nombre_usuario': alumno.nombreAlumno,
+    }
+    
+    return render(request, 'page/calificaciones_alumno.html', contexto)
 
 @maestro_login_required
 def documentacion(request):

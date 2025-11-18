@@ -1,0 +1,234 @@
+{% extends 'page/base.html' %}
+
+{% block title %}Mis Calificaciones{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center mb-4">
+                <i class="fas fa-chart-bar"></i> Mis Calificaciones
+            </h1>
+        </div>
+    </div>
+
+    <!-- Información del Alumno -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Información del Estudiante</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong> {{ alumno.nombreAlumno }}</p>
+                            <p><strong>Correo:</strong> {{ alumno.correo }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if alumno.matricula %}
+                            <p><strong>Matrícula:</strong> {{ alumno.matricula }}</p>
+                            {% endif %}
+                            {% if alumno.carrera %}
+                            <p><strong>Carrera:</strong> {{ alumno.carrera }}</p>
+                            {% endif %}
+                            {% if alumno.semestre %}
+                            <p><strong>Semestre:</strong> {{ alumno.semestre }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Promedio General -->
+    <div class="row mb-4">
+        <div class="col-md-4 offset-md-4">
+            <div class="card shadow-lg text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">PROMEDIO GENERAL</h5>
+                    <h1 class="display-1 
+                        {% if alumno.promedio >= 8 %}text-success
+                        {% elif alumno.promedio >= 6 %}text-warning
+                        {% else %}text-danger
+                        {% endif %}">
+                        {{ alumno.promedio|floatformat:2 }}
+                    </h1>
+                    <p class="text-muted">
+                        {% if alumno.promedio >= 8 %}
+                            <i class="fas fa-star text-success"></i> ¡Excelente desempeño!
+                        {% elif alumno.promedio >= 6 %}
+                            <i class="fas fa-thumbs-up text-warning"></i> Buen trabajo
+                        {% else %}
+                            <i class="fas fa-exclamation-triangle text-danger"></i> Necesitas mejorar
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Calificaciones Parciales -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-list-ol"></i> Calificaciones Parciales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col" class="text-center">Parcial</th>
+                                    <th scope="col" class="text-center">Calificación</th>
+                                    <th scope="col" class="text-center">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center"><strong>Parcial 1</strong></td>
+                                    <td class="text-center">
+                                        <span class="badge badge-lg 
+                                            {% if alumno.calificacion_parcial1 >= 8 %}badge-success
+                                            {% elif alumno.calificacion_parcial1 >= 6 %}badge-warning
+                                            {% else %}badge-danger
+                                            {% endif %}">
+                                            {{ alumno.calificacion_parcial1|floatformat:1 }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if alumno.calificacion_parcial1 >= 6 %}
+                                            <i class="fas fa-check-circle text-success"></i> Aprobado
+                                        {% else %}
+                                            <i class="fas fa-times-circle text-danger"></i> Reprobado
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center"><strong>Parcial 2</strong></td>
+                                    <td class="text-center">
+                                        <span class="badge badge-lg 
+                                            {% if alumno.calificacion_parcial2 >= 8 %}badge-success
+                                            {% elif alumno.calificacion_parcial2 >= 6 %}badge-warning
+                                            {% else %}badge-danger
+                                            {% endif %}">
+                                            {{ alumno.calificacion_parcial2|floatformat:1 }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if alumno.calificacion_parcial2 >= 6 %}
+                                            <i class="fas fa-check-circle text-success"></i> Aprobado
+                                        {% else %}
+                                            <i class="fas fa-times-circle text-danger"></i> Reprobado
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center"><strong>Parcial 3</strong></td>
+                                    <td class="text-center">
+                                        <span class="badge badge-lg 
+                                            {% if alumno.calificacion_parcial3 >= 8 %}badge-success
+                                            {% elif alumno.calificacion_parcial3 >= 6 %}badge-warning
+                                            {% else %}badge-danger
+                                            {% endif %}">
+                                            {{ alumno.calificacion_parcial3|floatformat:1 }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if alumno.calificacion_parcial3 >= 6 %}
+                                            <i class="fas fa-check-circle text-success"></i> Aprobado
+                                        {% else %}
+                                            <i class="fas fa-times-circle text-danger"></i> Reprobado
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfica de Calificaciones -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Progreso Académico</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficaCalificaciones" width="400" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón de regreso -->
+    <div class="row mt-4 mb-5">
+        <div class="col-12 text-center">
+            <a href="{% url 'inicio' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Inicio
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    // Gráfica de calificaciones
+    const ctx = document.getElementById('graficaCalificaciones').getContext('2d');
+    const graficaCalificaciones = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Parcial 1', 'Parcial 2', 'Parcial 3'],
+            datasets: [{
+                label: 'Calificaciones',
+                data: [
+                    {{ alumno.calificacion_parcial1|default:0 }},
+                    {{ alumno.calificacion_parcial2|default:0 }},
+                    {{ alumno.calificacion_parcial3|default:0 }}
+                ],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            },
+            {
+                label: 'Calificación Mínima Aprobatoria',
+                data: [6, 6, 6],
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                title: {
+                    display: true,
+                    text: 'Evolución de Calificaciones por Parcial'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 10,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
