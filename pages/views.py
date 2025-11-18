@@ -10,14 +10,18 @@ from math import sqrt, pi, exp
 # BASE DE DATOS - MONGODB
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Maestro
-from .decorators import maestro_login_required  # ← AGREGAR ESTE IMPORT
+from .models import Maestro, Alumno
+from .decorators import maestro_login_required, solo_maestro_required  # ← AGREGAR ESTE IMPORT
 
 
 def home(request):
     contexto = {
         'maestro_id': request.session.get('maestro_id'),
         'maestro_correo': request.session.get('maestro_correo'),
+        'alumno_id': request.session.get('alumno_id'),
+        'alumno_correo': request.session.get('alumno_correo'),
+        'tipo_usuario': request.session.get('tipo_usuario'),
+        'nombre_usuario': request.session.get('nombre_usuario'),
     }
     return render(request, 'page/home.html', contexto)
 
@@ -563,7 +567,7 @@ def registro(request):
             errores.append("El nombre no puede contener números")
         if not telefonoMaestro.isdigit():
             errores.append("El teléfono solo puede contener números")
-        if not correo.endswith('@maestro.edu.mx'):
+        if not (correo.endswith('@maestro.edu.mx') or correo.endswith('@alumno.edu.mx')):
             errores.append("Favor de ingresar un correo válido")
         if Maestro.objects.filter(correo=correo).exists():
             errores.append("Correo ya registrado")
@@ -584,13 +588,23 @@ def registro(request):
             for e in errores:
                 messages.error(request, e)
         else:
-            Maestro.objects.create(
-                correo=correo, 
-                contraseña=contraseña,
-                nombreMaestro=nombreMaestro,
-                telefonoMaestro=telefonoMaestro
+            # Determinar si es maestro o alumno según el dominio del correo
+            if correo.endswith('@maestro.edu.mx'):
+                Maestro.objects.create(
+                    correo=correo, 
+                    contraseña=contraseña,
+                    nombreMaestro=nombreMaestro,
+                    telefonoMaestro=telefonoMaestro
                 )
-            messages.success(request, "¡Maestro registrado exitosamente!")
+                messages.success(request, "¡Maestro registrado exitosamente!")
+            elif correo.endswith('@alumno.edu.mx'):
+                Alumno.objects.create(
+                    correo=correo,
+                    contraseña=contraseña,
+                    nombreAlumno=nombreMaestro,  # Usar el mismo campo para el nombre
+                    telefonoAlumno=telefonoMaestro  # Usar el mismo campo para el teléfono
+                )
+                messages.success(request, "¡Alumno registrado exitosamente!")
 
     return render(request, 'page/registro.html')
 
@@ -601,17 +615,31 @@ def login_maestro(request):
         correo = request.POST['correo']  
         contraseña = request.POST['contraseña']
 
+        # Intentar login como maestro
         try:
-            maestro = Maestro.objects.get(
-                correo=correo, 
-                contraseña=contraseña,
-                )
-            # Guardar en sesión
+            maestro = Maestro.objects.get(correo=correo, contraseña=contraseña)
             request.session['maestro_id'] = maestro.id
             request.session['maestro_correo'] = maestro.correo
+            request.session['tipo_usuario'] = 'maestro'
+            request.session['nombre_usuario'] = maestro.nombreMaestro
             return redirect('inicio')  
         except Maestro.DoesNotExist:
-            return render(request, 'page/login.html', {'error': 'Usuario o contraseña inválidos.'})
+            pass
+        
+        # Si no es maestro, intentar login como alumno
+        try:
+            alumno = Alumno.objects.get(correo=correo, contraseña=contraseña)
+            request.session['alumno_id'] = alumno.id
+            request.session['alumno_correo'] = alumno.correo
+            request.session['tipo_usuario'] = 'alumno'
+            request.session['nombre_usuario'] = alumno.nombreAlumno
+            request.session['matricula'] = alumno.matricula
+            return redirect('inicio')
+        except Alumno.DoesNotExist:
+            pass
+        
+        return render(request, 'page/login.html', {'error': 'Usuario o contraseña inválidos.'})
+    
     return render(request, 'page/login.html')
 
 def logout_maestro(request):
@@ -620,15 +648,44 @@ def logout_maestro(request):
 
 @maestro_login_required
 def perfil(request):
-    # Traer el maestro usando el correo único guardado en la sesión
-    correo_sesion = request.session.get('maestro_correo')
-    maestro = Maestro.objects.filter(correo=correo_sesion).first()
-
-    if not maestro:
-        messages.error(request, "No se encontró tu perfil.")
-        return redirect('inicio')
-
-    contexto = {'maestro': maestro}
+    contexto = {}
+    
+    # Verificar si es maestro
+    if 'maestro_correo' in request.session:
+        correo_sesion = request.session.get('maestro_correo')
+        maestro = Maestro.objects.filter(correo=correo_sesion).first()
+        
+        if not maestro:
+            messages.error(request, "No se encontró tu perfil.")
+            return redirect('inicio')
+        
+        contexto = {
+            'tipo_usuario': 'maestro',
+            'usuario': maestro,
+            'correo': maestro.correo,
+            'nombre': maestro.nombreMaestro,
+            'telefono': maestro.telefonoMaestro
+        }
+    
+    # Verificar si es alumno
+    elif 'alumno_correo' in request.session:
+        correo_sesion = request.session.get('alumno_correo')
+        alumno = Alumno.objects.filter(correo=correo_sesion).first()
+        
+        if not alumno:
+            messages.error(request, "No se encontró tu perfil.")
+            return redirect('inicio')
+        
+        contexto = {
+            'tipo_usuario': 'alumno',
+            'usuario': alumno,
+            'correo': alumno.correo,
+            'nombre': alumno.nombreAlumno,
+            'matricula': alumno.matricula,
+            'carrera': alumno.carrera,
+            'semestre': alumno.semestre
+        }
+    
     return render(request, 'page/perfil.html', contexto)
 
 @maestro_login_required
