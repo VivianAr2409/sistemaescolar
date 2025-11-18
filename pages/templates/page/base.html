@@ -67,6 +67,7 @@
                     <li><a href="{% url 'histograma' %}"><i data-lucide="bar-chart"></i> Histograma</a></li>
                     <li><a href="{% url 'pareto' %}"><i data-lucide="trending-up"></i> Diagrama de Pareto</a></li>
                     <li><a href="{% url 'control' %}"><i data-lucide="activity"></i> Gráfica de Control</a></li>
+                    <li><a href="{% url 'registrar_alumno' %}"><i data-lucide="user-plus"></i> Registrar Alumno</a></li>
                 {% elif request.session.tipo_usuario == 'alumno' %}
                     <!-- Opciones solo para alumnos -->
                     <li><a href="{% url 'calificaciones_alumno' %}"><i data-lucide="clipboard-list"></i> Mis Calificaciones</a></li>

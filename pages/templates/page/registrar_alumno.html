@@ -1,0 +1,201 @@
+{% extends 'page/base.html' %}
+{% load static %}
+
+{% block title %}Registrar Alumno{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3><i class="fas fa-user-plus"></i> Registrar Nuevo Alumno</h3>
+                    <p class="mb-0">Complete los datos del estudiante</p>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Mensajes de error/éxito -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" action="{% url 'registrar_alumno' %}">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Información Personal -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3 text-primary"><i class="fas fa-user"></i> Información Personal</h5>
+                                
+                                <div class="form-group">
+                                    <label for="nombreAlumno">Nombre Completo <span class="text-danger">*</span></label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="nombreAlumno" 
+                                           name="nombreAlumno" 
+                                           placeholder="Ej: Juan Pérez García" 
+                                           required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="telefonoAlumno">Teléfono <span class="text-danger">*</span></label>
+                                    <input type="tel" 
+                                           class="form-control" 
+                                           id="telefonoAlumno" 
+                                           name="telefonoAlumno" 
+                                           placeholder="Ej: 5551234567" 
+                                           pattern="[0-9]{10}" 
+                                           required>
+                                    <small class="form-text text-muted">10 dígitos sin espacios</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="correo">Correo Institucional <span class="text-danger">*</span></label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="correo" 
+                                           name="correo" 
+                                           placeholder="nombre@alumno.edu.mx" 
+                                           pattern=".*@alumno\.edu\.mx$"
+                                           required>
+                                    <small class="form-text text-muted">Debe terminar con @alumno.edu.mx</small>
+                                </div>
+                            </div>
+
+                            <!-- Información Académica -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3 text-success"><i class="fas fa-graduation-cap"></i> Información Académica</h5>
+                                
+                                <div class="form-group">
+                                    <label for="matricula">Matrícula</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="matricula" 
+                                           name="matricula" 
+                                           placeholder="Ej: 2024001234">
+                                    <small class="form-text text-muted">Opcional - Debe ser única</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="carrera">Carrera</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="carrera" 
+                                           name="carrera" 
+                                           placeholder="Ej: Ingeniería en Sistemas">
+                                    <small class="form-text text-muted">Opcional</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="semestre">Semestre</label>
+                                    <select class="form-control" id="semestre" name="semestre">
+                                        <option value="1" selected>1° Semestre</option>
+                                        <option value="2">2° Semestre</option>
+                                        <option value="3">3° Semestre</option>
+                                        <option value="4">4° Semestre</option>
+                                        <option value="5">5° Semestre</option>
+                                        <option value="6">6° Semestre</option>
+                                        <option value="7">7° Semestre</option>
+                                        <option value="8">8° Semestre</option>
+                                        <option value="9">9° Semestre</option>
+                                        <option value="10">10° Semestre</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Contraseñas -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="mb-3 text-warning"><i class="fas fa-lock"></i> Seguridad</h5>
+                                
+                                <div class="form-group">
+                                    <label for="contraseña">Contraseña <span class="text-danger">*</span></label>
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="contraseña" 
+                                           name="contraseña" 
+                                           minlength="8"
+                                           required>
+                                    <small class="form-text text-muted">
+                                        Mínimo 8 caracteres, debe incluir:
+                                        <ul class="mb-0 mt-1">
+                                            <li>Al menos una mayúscula</li>
+                                            <li>Al menos una minúscula</li>
+                                            <li>Al menos un número</li>
+                                            <li>Al menos un carácter especial</li>
+                                        </ul>
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <h5 class="mb-3 text-white">.</h5>
+                                <div class="form-group">
+                                    <label for="confirmar">Confirmar Contraseña <span class="text-danger">*</span></label>
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="confirmar" 
+                                           name="confirmar" 
+                                           minlength="8"
+                                           required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="form-group text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-save"></i> Registrar Alumno
+                            </button>
+                            <a href="{% url 'inicio' %}" class="btn btn-secondary btn-lg px-5 ml-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted"><i class="fas fa-info-circle"></i> Notas Importantes:</h6>
+                    <ul class="text-muted mb-0">
+                        <li>Los campos marcados con <span class="text-danger">*</span> son obligatorios</li>
+                        <li>El correo debe ser único en el sistema</li>
+                        <li>La matrícula, si se proporciona, debe ser única</li>
+                        <li>El alumno podrá iniciar sesión con el correo y contraseña asignados</li>
+                        <li>Las calificaciones iniciales serán 0.0 hasta que se asignen</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS (si no está incluido en base.html) -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Validar que las contraseñas coincidan
+    document.querySelector('form').addEventListener('submit', function(e) {
+        var password = document.getElementById('contraseña').value;
+        var confirm = document.getElementById('confirmar').value;
+        
+        if (password !== confirm) {
+            e.preventDefault();
+            alert('Las contraseñas no coinciden');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

@@ -575,10 +575,11 @@ def registro(request):
             errores.append("El nombre no puede contener números")
         if not telefonoMaestro.isdigit():
             errores.append("El teléfono solo puede contener números")
-        if not (correo.endswith('@maestro.edu.mx') or correo.endswith('@alumno.edu.mx')):
-            errores.append("Favor de ingresar un correo válido")
-        if Maestro.objects.filter(correo=correo).exists():
-            errores.append("Correo ya registrado")
+        if not correo.endswith('@maestro.edu.mx'):
+            errores.append("Solo se permiten registros de maestros con correo @maestro.edu.mx")
+        # Verificar que el correo no exista ni en Maestro ni en Alumno
+        if Maestro.objects.filter(correo=correo).exists() or Alumno.objects.filter(correo=correo).exists():
+            errores.append("Este correo ya está registrado en el sistema")
         if contraseña != confirmar:
             errores.append("Las contraseñas no coinciden")
         if len(contraseña) < 8:
@@ -596,25 +597,81 @@ def registro(request):
             for e in errores:
                 messages.error(request, e)
         else:
-            # Determinar si es maestro o alumno según el dominio del correo
-            if correo.endswith('@maestro.edu.mx'):
-                Maestro.objects.create(
-                    correo=correo, 
-                    contraseña=contraseña,
-                    nombreMaestro=nombreMaestro,
-                    telefonoMaestro=telefonoMaestro
-                )
-                messages.success(request, "¡Maestro registrado exitosamente!")
-            elif correo.endswith('@alumno.edu.mx'):
-                Alumno.objects.create(
-                    correo=correo,
-                    contraseña=contraseña,
-                    nombreAlumno=nombreMaestro,  # Usar el mismo campo para el nombre
-                    telefonoAlumno=telefonoMaestro  # Usar el mismo campo para el teléfono
-                )
-                messages.success(request, "¡Alumno registrado exitosamente!")
+            # Solo permitir registro de maestros en el formulario público
+            Maestro.objects.create(
+                correo=correo, 
+                contraseña=contraseña,
+                nombreMaestro=nombreMaestro,
+                telefonoMaestro=telefonoMaestro
+            )
+            messages.success(request, "¡Maestro registrado exitosamente!")
+            return redirect('login')
 
     return render(request, 'page/registro.html')
+
+@solo_maestro_required
+def registrar_alumno(request):
+    """Vista exclusiva para que maestros registren alumnos"""
+    if request.method == 'POST':
+        nombreAlumno = request.POST.get('nombreAlumno')
+        telefonoAlumno = request.POST.get('telefonoAlumno')
+        correo = request.POST.get('correo').lower()
+        contraseña = request.POST.get('contraseña')
+        confirmar = request.POST.get('confirmar')
+        matricula = request.POST.get('matricula', '')
+        carrera = request.POST.get('carrera', '')
+        semestre = request.POST.get('semestre', 1)
+
+        errores = []
+
+        # --- Validaciones ---
+        if any(char.isdigit() for char in nombreAlumno):
+            errores.append("El nombre no puede contener números")
+        if not telefonoAlumno.isdigit():
+            errores.append("El teléfono solo puede contener números")
+        if not correo.endswith('@alumno.edu.mx'):
+            errores.append("El correo debe terminar con @alumno.edu.mx")
+        # Verificar que el correo no exista ni en Maestro ni en Alumno
+        if Maestro.objects.filter(correo=correo).exists() or Alumno.objects.filter(correo=correo).exists():
+            errores.append("Este correo ya está registrado en el sistema")
+        # Verificar matrícula duplicada si se proporciona
+        if matricula and Alumno.objects.filter(matricula=matricula).exists():
+            errores.append("Esta matrícula ya está registrada")
+        if contraseña != confirmar:
+            errores.append("Las contraseñas no coinciden")
+        if len(contraseña) < 8:
+            errores.append("La contraseña debe tener al menos 8 caracteres")
+        if not re.search(r"[A-Z]", contraseña):
+            errores.append("La contraseña debe contener al menos una letra mayúscula")
+        if not re.search(r"[a-z]", contraseña):
+            errores.append("La contraseña debe contener al menos una letra minúscula")
+        if not re.search(r"\d", contraseña):
+            errores.append("La contraseña debe contener al menos un número")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", contraseña):
+            errores.append("La contraseña debe contener al menos un carácter especial")
+
+        if errores:
+            for e in errores:
+                messages.error(request, e)
+        else:
+            Alumno.objects.create(
+                correo=correo,
+                contraseña=contraseña,
+                nombreAlumno=nombreAlumno,
+                telefonoAlumno=telefonoAlumno,
+                matricula=matricula if matricula else None,
+                carrera=carrera if carrera else '',
+                semestre=int(semestre) if semestre else 1
+            )
+            messages.success(request, f"¡Alumno {nombreAlumno} registrado exitosamente!")
+            return redirect('registrar_alumno')
+
+    contexto = {
+        'maestro_id': request.session.get('maestro_id'),
+        'maestro_correo': request.session.get('maestro_correo'),
+        'tipo_usuario': 'maestro',
+    }
+    return render(request, 'page/registrar_alumno.html', contexto)
 
 def login_maestro(request):
     request.session.flush()

@@ -82,6 +82,22 @@
             </div>
         </div>
 
+        <!-- Acceso Rápido -->
+        <div class="stats-grid" style="margin-top: 2rem;">
+            <div class="stat-card" style="grid-column: span 2;">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                    <i data-lucide="user-plus"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Gestión de Alumnos</h3>
+                    <p style="color: #666; font-size: 0.9rem; margin: 0.5rem 0;">Registre nuevos estudiantes en el sistema</p>
+                    <a href="{% url 'registrar_alumno' %}" class="btn-primary" style="display: inline-block; margin-top: 1rem; text-decoration: none; padding: 0.6rem 1.5rem; border-radius: 6px;">
+                        <i data-lucide="plus"></i> Registrar Nuevo Alumno
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <div class="charts-grid">
             <div class="chart-card">
                 <div class="chart-header">
