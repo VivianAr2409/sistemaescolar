@@ -14,7 +14,6 @@ Sistema web para la gestión de datos escolares con funcionalidades de análisis
 ## Tecnologías utilizadas
 - Python/Django
 - HTML5, CSS3, JavaScript
-- Bootstrap
 - Chart.js para visualizaciones
 
 ## Autor

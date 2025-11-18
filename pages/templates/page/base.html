@@ -29,11 +29,17 @@
             </div>
             
             <div class="header-actions">
-                {% if request.session.maestro_correo %}
+                {% if request.session.maestro_correo or request.session.alumno_correo %}
                     <div class="user-info">
                         <a href="{% url 'perfil' %}" class="header-btn" style="gap: 0.5rem;"> 
                             <i data-lucide="user"></i> 
-                            <span>{{ request.session.maestro_correo }}</span> 
+                            <span>
+                                {% if request.session.tipo_usuario == 'maestro' %}
+                                    {{ request.session.maestro_correo }}
+                                {% elif request.session.tipo_usuario == 'alumno' %}
+                                    {{ request.session.alumno_correo }}
+                                {% endif %}
+                            </span> 
                         </a>
                     </div>
                     <form method="post" action="{% url 'logout' %}">
@@ -49,7 +55,7 @@
 
     <div class="app-wrapper">
 
-    {% if request.session.maestro_correo %}
+    {% if request.session.maestro_correo or request.session.alumno_correo %}
     <aside class="sidebar">
         <nav class="sidebar-nav">
             <ul class="sidebar-menu">
