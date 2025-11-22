@@ -69,7 +69,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Sistema_escolar.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -79,8 +78,8 @@ DATABASES = {
         'NAME': 'sistema_escolar',  
         'CLIENT': {
             'host': 'mongodb+srv://l21211959_db_user:hEzE7V1yaLPR1dvK@sistema.m4o2xct.mongodb.net/?appName=sistema',
-            'username': 'l21211959_db_user',         
-            'password': 'hEzE7V1yaLPR1dvK',     
+            'username': 'l21211959_db_user',
+            'password': 'hEzE7V1yaLPR1dvK',
             'authMechanism': 'SCRAM-SHA-1'
         }
     }

@@ -7,6 +7,8 @@ import seaborn as sns
 import numpy as np
 from math import sqrt, pi, exp
 
+import random
+
 # BASE DE DATOS - MONGODB
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -32,7 +34,6 @@ def home(request):
     
     # Si no hay sesión, mostrar la página de inicio general
     return render(request, 'page/home.html', contexto)
-
 
 def estratificacion(request):
     """
@@ -671,6 +672,7 @@ def registrar_alumno(request):
         'maestro_correo': request.session.get('maestro_correo'),
         'tipo_usuario': 'maestro',
     }
+
     return render(request, 'page/registrar_alumno.html', contexto)
 
 def login_maestro(request):
@@ -754,7 +756,7 @@ def perfil(request):
     return render(request, 'page/perfil.html', contexto)
 
 def calificaciones_alumno(request):
-    """Vista para que los alumnos vean sus calificaciones"""
+    """Vista para que los alumnos vean sus calificaciones (hardcodeadas por carrera)."""
     if 'alumno_correo' not in request.session:
         messages.error(request, "Debes iniciar sesión como alumno.")
         return redirect('login')
@@ -765,16 +767,74 @@ def calificaciones_alumno(request):
     if not alumno:
         messages.error(request, "No se encontró tu perfil.")
         return redirect('inicio')
-    
-    # Calcular el promedio si no existe
-    if alumno.promedio == 0 or alumno.promedio is None:
-        alumno.calcular_promedio()
-        alumno.save()
-    
+
+    materiasPorCarrera = {
+        "Medicina": ["Anatomía", "Fisiología"],
+        "Derecho": ["Derecho Civil", "Derecho Penal"],
+        "Ingeniería": ["Matemáticas", "Física"],
+        "Administración": ["Contabilidad", "Marketing"],
+    }
+
+    materias = materiasPorCarrera.get(alumno.carrera, ["Materia 1", "Materia 2"])
+
+    tabla_calificaciones = []
+    for materia in materias:
+        unidades_list = []
+        suma_materia = 0
+
+        for unidad in [1, 2, 3]:
+            calificacion = round(random.uniform(7, 10), 1)
+
+            unidades_list.append({
+                "unidad": unidad,
+                "calificacion": calificacion,
+            })
+
+            suma_materia += calificacion
+
+        promedio_materia = round(suma_materia / 3, 1)
+
+        tabla_calificaciones.append({
+            "materia": materia,
+            "unidades": unidades_list,
+            "promedio_materia": promedio_materia,
+        })
+
+    # Promedio final (promedio de promedios)
+    promedio_final = round(
+        sum(m["promedio_materia"] for m in tabla_calificaciones) / len(tabla_calificaciones),
+        1
+    ) if tabla_calificaciones else 0
+
+    # ✅ “Parciales” calculados como promedio de cada unidad entre todas las materias
+    parcial1 = parcial2 = parcial3 = 0
+    if tabla_calificaciones:
+        suma_p1 = suma_p2 = suma_p3 = 0
+        n = len(tabla_calificaciones)
+
+        for fila in tabla_calificaciones:
+            # Buscar cada unidad por número
+            u1 = next((u["calificacion"] for u in fila["unidades"] if u["unidad"] == 1), 0)
+            u2 = next((u["calificacion"] for u in fila["unidades"] if u["unidad"] == 2), 0)
+            u3 = next((u["calificacion"] for u in fila["unidades"] if u["unidad"] == 3), 0)
+
+            suma_p1 += u1
+            suma_p2 += u2
+            suma_p3 += u3
+
+        parcial1 = round(suma_p1 / n, 1)
+        parcial2 = round(suma_p2 / n, 1)
+        parcial3 = round(suma_p3 / n, 1)
+
     contexto = {
         'alumno': alumno,
         'tipo_usuario': 'alumno',
         'nombre_usuario': alumno.nombreAlumno,
+        'tabla_calificaciones': tabla_calificaciones,
+        'promedio_final': promedio_final,
+        'parcial1': parcial1,
+        'parcial2': parcial2,
+        'parcial3': parcial3,
     }
     
     return render(request, 'page/calificaciones_alumno.html', contexto)
